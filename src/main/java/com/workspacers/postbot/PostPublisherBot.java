@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class PostPublisherBot extends TelegramLongPollingBot {
+    private static final String CB_PREVIEW = "PREVIEW_POST";
     private static final String CB_PUBLISH = "PUBLISH_POST";
     private static final String CB_FORCE_PUBLISH = "FORCE_PUBLISH_POST";
 
@@ -55,10 +56,20 @@ public class PostPublisherBot extends TelegramLongPollingBot {
             sm.setText("""
 Привет! Я публикую подготовленный пост в вашу группу по кнопке.
 
+Нажми «Предпросмотр», чтобы увидеть пост у себя в чате.
 Нажми «Опубликовать пост», и я отправлю фото + текст в группу.
 """);
             sm.setReplyMarkup(publishKeyboard(false));
             execute(sm);
+            return;
+        }
+
+        if (text.equals("/preview")) {
+            if (!isAllowed(userId)) {
+                execute(simple(chatId, "⛔️ У вас нет доступа к предпросмотру."));
+                return;
+            }
+            previewToUser(chatId);
             return;
         }
 
@@ -85,6 +96,17 @@ public class PostPublisherBot extends TelegramLongPollingBot {
         long userId = (cq.getFrom() != null) ? cq.getFrom().getId() : -1;
         long chatId = cq.getMessage().getChatId();
 
+        if (CB_PREVIEW.equals(data)) {
+            if (!isAllowed(userId)) {
+                execute(answer(cq.getId(), "Нет доступа"));
+                execute(simple(chatId, "⛔️ У вас нет доступа к предпросмотру."));
+                return;
+            }
+            execute(answer(cq.getId(), "Отправляю предпросмотр..."));
+            previewToUser(chatId);
+            return;
+        }
+
         if (CB_PUBLISH.equals(data) || CB_FORCE_PUBLISH.equals(data)) {
             if (!isAllowed(userId)) {
                 execute(answer(cq.getId(), "Нет доступа"));
@@ -96,6 +118,27 @@ public class PostPublisherBot extends TelegramLongPollingBot {
             execute(answer(cq.getId(), force ? "Публикую (форс)..." : "Публикую..."));
             publishToGroup(userId, force, chatId);
         }
+    }
+
+    /**
+     * Отправляет пост пользователю в текущий чат (предпросмотр).
+     */
+    private void previewToUser(long chatId) throws TelegramApiException {
+        File photo = new File(env.postImagePath);
+        if (!photo.exists() || !photo.isFile()) {
+            execute(simple(chatId, "❌ Не найден файл изображения: " + env.postImagePath + "\n" +
+                    "Укажите корректный путь в POST_IMAGE_PATH и перезапустите контейнер."));
+            return;
+        }
+
+        SendPhoto sp = new SendPhoto();
+        sp.setChatId(chatId);
+        sp.setPhoto(new InputFile(photo));
+        sp.setCaption(PostContent.HTML_TEXT);
+        sp.setParseMode("HTML");
+        sp.setReplyMarkup(ctaKeyboard());
+
+        execute(sp);
     }
 
     private void publishToGroup(long requestedBy, boolean force, long notifyChatId) throws TelegramApiException {
@@ -134,17 +177,27 @@ public class PostPublisherBot extends TelegramLongPollingBot {
     }
 
     private InlineKeyboardMarkup publishKeyboard(boolean showForce) {
-        InlineKeyboardButton b1 = new InlineKeyboardButton("Опубликовать пост");
-        b1.setCallbackData(CB_PUBLISH);
+        InlineKeyboardButton preview = new InlineKeyboardButton("Предпросмотр");
+        preview.setCallbackData(CB_PREVIEW);
+
+        InlineKeyboardButton publish = new InlineKeyboardButton("Опубликовать пост");
+        publish.setCallbackData(CB_PUBLISH);
 
         if (!showForce) {
-            return new InlineKeyboardMarkup(List.of(List.of(b1)));
+            return new InlineKeyboardMarkup(List.of(
+                    List.of(preview),
+                    List.of(publish)
+            ));
         }
 
-        InlineKeyboardButton b2 = new InlineKeyboardButton("Опубликовать повторно");
-        b2.setCallbackData(CB_FORCE_PUBLISH);
+        InlineKeyboardButton republish = new InlineKeyboardButton("Опубликовать повторно");
+        republish.setCallbackData(CB_FORCE_PUBLISH);
 
-        return new InlineKeyboardMarkup(List.of(List.of(b1), List.of(b2)));
+        return new InlineKeyboardMarkup(List.of(
+                List.of(preview),
+                List.of(publish),
+                List.of(republish)
+        ));
     }
 
     private InlineKeyboardMarkup ctaKeyboard() {
