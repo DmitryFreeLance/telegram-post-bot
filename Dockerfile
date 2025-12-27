@@ -4,12 +4,21 @@ WORKDIR /src
 COPY pom.xml .
 RUN mvn -q -e -DskipTests dependency:go-offline
 COPY src ./src
+
+# Собираем и выбираем JAR, где в манифесте есть Main-Class
 RUN mvn -q -e -DskipTests package && \
-    ls -la target && \
+    echo "---- TARGET DIR ----" && ls -la target && \
     JAR="$(ls -1 target/*-shaded.jar 2>/dev/null | head -n 1)" && \
-    if [ -z "$JAR" ]; then JAR="$(ls -1 target/*.jar | grep -v '\.original$' | head -n 1)"; fi && \
+    if [ -z "$JAR" ]; then \
+      for f in target/*.jar; do \
+        case "$f" in *original* ) continue ;; esac; \
+        if unzip -p "$f" META-INF/MANIFEST.MF 2>/dev/null | grep -q '^Main-Class:'; then \
+          JAR="$f"; break; \
+        fi; \
+      done; \
+    fi && \
     echo "Using jar: $JAR" && \
-    cp "$JAR" /src/app.jar
+    test -n "$JAR" && cp "$JAR" /src/app.jar
 
 # ---- runtime stage ----
 FROM eclipse-temurin:17-jre
