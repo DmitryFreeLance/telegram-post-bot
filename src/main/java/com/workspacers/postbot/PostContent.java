@@ -28,7 +28,7 @@ public final class PostContent {
 """;
 
     public static final String CTA_URL = "https://t.me/BezzPanikiBot";
-    public static final String CTA_TEXT = "Получить практику";
+    public static final String CTA_TEXT = "Забрать подарок \uD83C\uDF81";
 
     public static String contentHash() {
         // stable hash used to avoid duplicate posting
