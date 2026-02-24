@@ -8,11 +8,21 @@ public final class PostContent {
     }
 
     public static final String HTML_TEXT = """
-            Удобный бот для оформления заказа
+            Matrx AI запущен 🚀
+            
+            Создавай текст, фото и видео за пару сообщений.
+            Выбирай модель под задачу — и получай результат сразу в Telegram.
+            
+            Что уже внутри:
+            🧠 Текст — Gemini 3
+            📸 Фото — Flux 2, Ideogram V3, NanoBanana
+            🎬 Видео — Veo 3.1, Sora 2, Kling 3.0
+            
+            Попробуй сейчас — это быстро и удобно.
             """;
 
-    public static final String CTA_URL = "https://t.me/RollsRoms_bot";
-    public static final String CTA_TEXT = "\uD83D\uDD25 Сделать заказ";
+    public static final String CTA_URL = "https://t.me/MatrxAIBot";
+    public static final String CTA_TEXT = "\uD83D\uDD25 Запустить";
 
     public static String contentHash() {
         // stable hash used to avoid duplicate posting
