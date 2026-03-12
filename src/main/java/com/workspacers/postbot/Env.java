@@ -23,7 +23,7 @@ public final class Env {
     public static Env load() {
         String token = getenvRequired("BOT_TOKEN");
         String username = getenv("BOT_USERNAME", "PostPublisherBot");
-        long groupId = parseLong(getenv("GROUP_CHAT_ID", "-1003672060582"), -1003672060582L);
+        long groupId = parseLong(getenv("GROUP_CHAT_ID", "-1005023110679"), -1005023110679L);
         String db = getenv("DB_PATH", "/data/bot.db");
         String img = getenv("POST_IMAGE_PATH", "/app/1.jpg");
 
